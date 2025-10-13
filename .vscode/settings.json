@@ -1,0 +1,6 @@
+{
+  "python.defaultInterpreterPath": "python",
+  "python.terminal.activateEnvironment": true,
+  "pyright.disableLanguageServices": false,
+  "pyright.disableOrganizeImports": false
+}

@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "build",
+			"path": "backend/sales-api/.venv/Lib/site-packages/pyright/dist",
+			"group": "build",
+			"problemMatcher": [],
+			"label": "npm: build - backend/sales-api/.venv/Lib/site-packages/pyright/dist",
+			"detail": "webpack --mode production --progress"
+		}
+	]
+}

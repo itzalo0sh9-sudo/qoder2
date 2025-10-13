@@ -1,0 +1,28 @@
+# Development Dockerfile for React Frontend
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Allow passing proxy build args so npm can use them inside the image
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+
+# Copy package files
+COPY package*.json ./
+
+# Configure npm to use proxy if provided, then install dependencies
+RUN if [ -n "${HTTP_PROXY}" ]; then npm config set proxy "${HTTP_PROXY}"; fi \
+ && if [ -n "${HTTPS_PROXY}" ]; then npm config set https-proxy "${HTTPS_PROXY}"; fi \
+ && npm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Start the development server
+CMD ["npm", "start"]

@@ -1,0 +1,143 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: enterprise_postgres
+    environment:
+      POSTGRES_DB: enterprise
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_MULTIPLE_DATABASES: sales,finance,hr
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - enterprise-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: enterprise_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - enterprise-network
+
+  # Sales API (FastAPI)
+  sales-api:
+    build:
+      context: ./backend/sales-api
+      dockerfile: Dockerfile
+    container_name: enterprise_sales_api
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET_KEY=your-secret-key-change-in-production
+      - ENVIRONMENT=development
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/sales-api:/app
+    # Run without the auto-reloader inside Docker to avoid watchfiles memory errors.
+    # For local code edit & live reload, run the app outside the container or enable a polling-based watcher.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    networks:
+      - enterprise-network
+
+  # Finance API (Django)
+  finance-api:
+    build:
+      context: ./backend/finance-api
+      dockerfile: Dockerfile
+    container_name: enterprise_finance_api
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
+      - REDIS_URL=redis://redis:6379/1
+      - SECRET_KEY=your-django-secret-key-change-in-production
+      - DEBUG=True
+      - ENVIRONMENT=development
+    ports:
+      - "8002:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/finance-api:/app
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - enterprise-network
+
+  # HR API (Django)
+  hr-api:
+    build:
+      context: ./backend/hr-api
+      dockerfile: Dockerfile
+    container_name: enterprise_hr_api
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
+      - REDIS_URL=redis://redis:6379/2
+      - SECRET_KEY=your-django-secret-key-change-in-production
+      - DEBUG=True
+      - ENVIRONMENT=development
+    ports:
+      - "8003:8000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/hr-api:/app
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - enterprise-network
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: enterprise_frontend
+    environment:
+      - REACT_APP_SALES_API_URL=http://localhost:8001
+      - REACT_APP_FINANCE_API_URL=http://localhost:8002
+      - REACT_APP_HR_API_URL=http://localhost:8003
+      - REACT_APP_ENVIRONMENT=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm start
+    networks:
+      - enterprise-network
+
+  # Nginx Reverse Proxy (Development)
+  nginx:
+    image: nginx:alpine
+    container_name: enterprise_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./infrastructure/docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - sales-api
+      - finance-api
+      - hr-api
+      - frontend
+    networks:
+      - enterprise-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  enterprise-network:
+    driver: bridge
