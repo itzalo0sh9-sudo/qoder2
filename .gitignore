@@ -1,0 +1,49 @@
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dylib
+
+# Distribution / packaging
+build/
+dist/
+eggs/
+*.egg-info/
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nose2-junit.xml
+coverage.xml
+
+# IDE
+.idea/
+.vscode/
+
+# Frontend
+node_modules/
+frontend/node_modules/
+frontend/build/
+
+# Docker
+.env
+docker-compose.override.yml
+
+# Misc
+*.log
+*.sql
+*.sqlite3
+*.db
