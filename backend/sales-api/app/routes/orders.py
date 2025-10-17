@@ -16,6 +16,9 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
     db_items = []
     for item in order.items:
         item_data = item.dict()
+        # Validate quantity
+        if item_data.get('quantity', 0) <= 0:
+            raise HTTPException(status_code=400, detail=f"Invalid quantity for product {item_data.get('product_id')}")
         if not item_data.get('price'):
             # fetch product price
             prod = db.execute(select(models.Product).where(models.Product.id == item_data['product_id'])).scalars().first()
