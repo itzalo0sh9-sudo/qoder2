@@ -5,8 +5,9 @@ from datetime import datetime
 class OrderItemBase(BaseModel):
     product_id: int
     quantity: int
-    price: float
-    total: float
+    # Allow clients to omit price/total; server will fill them in.
+    price: Optional[float] = None
+    total: Optional[float] = None
 
 class OrderItemCreate(OrderItemBase):
     pass

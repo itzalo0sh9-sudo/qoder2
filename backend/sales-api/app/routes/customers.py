@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app import schemas, models
 from app.database import get_db
 
@@ -9,7 +10,12 @@ router = APIRouter()
 def create_customer(customer: schemas.CustomerCreate, db: Session = Depends(get_db)):
     db_customer = models.Customer(**customer.dict())
     db.add(db_customer)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        # likely duplicate email
+        raise HTTPException(status_code=400, detail="Customer with this email already exists")
     db.refresh(db_customer)
     return db_customer
 
