@@ -22,10 +22,11 @@ class OrderBase(BaseModel):
     customer_id: int
     status: Optional[str] = "pending"
     payment_status: Optional[str] = "pending"
-    subtotal: float
-    tax: float
-    shipping: float
-    total: float
+    # Allow monetary fields to be optional on input; server will compute if missing.
+    subtotal: Optional[float] = 0.0
+    tax: Optional[float] = 0.0
+    shipping: Optional[float] = 0.0
+    total: Optional[float] = 0.0
 
 class OrderCreate(OrderBase):
     items: List[OrderItemCreate]
