@@ -41,6 +41,54 @@ cp .env.example .env
 nano .env
 ```
 
+## تشغيل محلي (بالعربية)
+
+فيما يلي تعليمات سريعة لتشغيل المشروع بالكامل محليًا، تشغيل الاختبارات، وملاحظة مهمة حول إعادة كتابة السجل (history rewrite).
+
+### المتطلبات
+- Docker و Docker Compose
+- Git
+
+### تشغيل الخدمات
+في مجلد المشروع:
+```powershell
+docker-compose up -d
+docker-compose logs -f
+```
+
+### الوصول إلى الخدمات
+- الواجهة الأمامية: http://localhost
+- Sales API: http://localhost:8001
+- Finance API: http://localhost:8002
+- HR API: http://localhost:8003
+
+### تشغيل الاختبارات (Sales API)
+ادخل إلى مجلد الخدمة وشغّل pytest داخل الحاوية أو محليًا بعد تثبيت المتطلبات:
+```powershell
+cd backend/sales-api
+# داخل الحاوية: pytest
+# أو تشغيل محليًا بعد تثبيت المتطلبات:
+pytest
+```
+
+### فحص الأنواع واللِنتر
+- Python: ruff، mypy
+- Frontend: npm run type-check
+
+### ملاحظة مهمة — إعادة كتابة السجل (تمّت الآن)
+تمت إزالة ملفات كبيرة/حساسة من تاريخ Git (على سبيل المثال: `.chrome-dev-profile`, `.venv`, `frontend/node_modules`, `frontend/build`, `dev.db`) عن طريق إعادة كتابة التاريخ وإجبار الدفع (force-push). هذا يغيّر التاريخ المشترك. خطوات مريحة للمساهمة بعد هذا التغيير:
+```powershell
+# أسهل حل: استنساخ جديد
+git clone https://github.com/itzalo0sh9-sudo/qoder2.git
+
+# أو تحديث نسخة محلية حالية (احذر من التغييرات غير المدمجة)
+git fetch origin
+git checkout main
+git reset --hard origin/main
+```
+نسخة احتياطية من التاريخ القديم متاحة على الفرع `backup-before-filter` في الريموت.
+
+
 ### 3. Start All Services
 ```bash
 # Start the entire system
