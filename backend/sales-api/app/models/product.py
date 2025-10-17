@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, Float, DateTime, Enum
 from sqlalchemy.sql import func
 from app.database import Base
 import enum
+from typing import Any
 
 class ProductStatus(str, enum.Enum):
     ACTIVE = "active"
@@ -19,6 +20,6 @@ class Product(Base):
     stock = Column(Integer)
     category = Column(String)
     supplier = Column(String)
-    status = Column(Enum(ProductStatus), default=ProductStatus.ACTIVE)
+    status: Any = Column(Enum(ProductStatus), default=ProductStatus.ACTIVE)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -5,6 +5,7 @@ from app.models.order import OrderItem
 from app.database import get_db
 
 from sqlalchemy import select
+from typing import Any, Dict, List
 
 router = APIRouter()
 
@@ -13,21 +14,21 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
     # Create the order
     # Compute subtotal from items; if item price not provided, load product price
     subtotal = 0.0
-    db_items = []
-    for item in order.items:
-        item_data = item.dict()
+    db_items: List[Dict[str, Any]] = []
+    for item_schema in order.items:
+        item_dict: Dict[str, Any] = item_schema.dict()
         # Validate quantity
-        if item_data.get('quantity', 0) <= 0:
-            raise HTTPException(status_code=400, detail=f"Invalid quantity for product {item_data.get('product_id')}")
-        if not item_data.get('price'):
+        if item_dict.get('quantity', 0) <= 0:
+            raise HTTPException(status_code=400, detail=f"Invalid quantity for product {item_dict.get('product_id')}")
+        if not item_dict.get('price'):
             # fetch product price
-            prod = db.execute(select(models.Product).where(models.Product.id == item_data['product_id'])).scalars().first()
+            prod = db.execute(select(models.Product).where(models.Product.id == item_dict['product_id'])).scalars().first()
             if prod is None:
-                raise HTTPException(status_code=400, detail=f"Product {item_data['product_id']} not found")
-            item_data['price'] = prod.price
-        item_data['total'] = item_data.get('total') or (item_data['price'] * item_data['quantity'])
-        subtotal += item_data['total']
-        db_items.append(item_data)
+                raise HTTPException(status_code=400, detail=f"Product {item_dict['product_id']} not found")
+            item_dict['price'] = prod.price
+        item_dict['total'] = item_dict.get('total') or (item_dict['price'] * item_dict['quantity'])
+        subtotal += item_dict['total']
+        db_items.append(item_dict)
 
     tax = order.tax or 0.0
     shipping = order.shipping or 0.0
@@ -46,8 +47,9 @@ def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)):
     db.refresh(db_order)
 
     # Create order items
-    for item in db_items:
-        db_item = OrderItem(order_id=db_order.id, **item)
+    for db_item_data in db_items:
+        # item is a mapping with primitive values; OrderItem expects kw args
+        db_item = OrderItem(order_id=db_order.id, product_id=db_item_data['product_id'], quantity=db_item_data['quantity'], price=db_item_data['price'], total=db_item_data['total'])
         db.add(db_item)
 
     db.commit()
