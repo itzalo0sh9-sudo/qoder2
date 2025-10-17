@@ -20,11 +20,17 @@ def create_tables_with_retry(retries: int = 10, delay: float = 2.0):
     # last attempt (let exception bubble)
     Base.metadata.create_all(bind=engine)
 
+
 app = FastAPI(
     title="Sales API",
     description="Enterprise Sales Management API",
     version="1.0.0"
 )
+
+# Ensure tables are created when the app starts
+@app.on_event("startup")
+def on_startup():
+    create_tables_with_retry()
 
 # Add CORS middleware
 app.add_middleware(

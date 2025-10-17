@@ -14,14 +14,14 @@
     },
     {
       "name": "Attach to Chrome (frontend)",
-      "type": "pwa-chrome",
+      "type": "chrome",
       "request": "attach",
       "port": 9222,
       "webRoot": "${workspaceFolder}/frontend"
     },
     {
       "name": "Launch Chrome (frontend)",
-      "type": "pwa-chrome",
+      "type": "chrome",
       "request": "launch",
       "url": "http://localhost:3000",
       "webRoot": "${workspaceFolder}/frontend",
