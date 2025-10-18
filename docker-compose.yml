@@ -3,10 +3,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: enterprise_postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: enterprise
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: sales,finance,hr
     ports:
       - "5432:5432"
@@ -34,11 +36,13 @@ services:
       context: ./backend/sales-api
       dockerfile: Dockerfile
     container_name: enterprise_sales_api
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET_KEY=your-secret-key-change-in-production
-      - ENVIRONMENT=development
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENVIRONMENT=${ENVIRONMENT}
     ports:
       - "8001:8000"
     depends_on:
@@ -58,12 +62,14 @@ services:
       context: ./backend/finance-api
       dockerfile: Dockerfile
     container_name: enterprise_finance_api
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
-      - REDIS_URL=redis://redis:6379/1
-      - SECRET_KEY=your-django-secret-key-change-in-production
-      - DEBUG=True
-      - ENVIRONMENT=development
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ENVIRONMENT=${ENVIRONMENT}
     ports:
       - "8002:8000"
     depends_on:
@@ -81,12 +87,14 @@ services:
       context: ./backend/hr-api
       dockerfile: Dockerfile
     container_name: enterprise_hr_api
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/enterprise
-      - REDIS_URL=redis://redis:6379/2
-      - SECRET_KEY=your-django-secret-key-change-in-production
-      - DEBUG=True
-      - ENVIRONMENT=development
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ENVIRONMENT=${ENVIRONMENT}
     ports:
       - "8003:8000"
     depends_on:
@@ -104,11 +112,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: enterprise_frontend
+    env_file:
+      - .env
     environment:
-      - REACT_APP_SALES_API_URL=http://localhost:8001
-      - REACT_APP_FINANCE_API_URL=http://localhost:8002
-      - REACT_APP_HR_API_URL=http://localhost:8003
-      - REACT_APP_ENVIRONMENT=development
+      - REACT_APP_SALES_API_URL=${REACT_APP_SALES_API_URL}
+      - REACT_APP_FINANCE_API_URL=${REACT_APP_FINANCE_API_URL}
+      - REACT_APP_HR_API_URL=${REACT_APP_HR_API_URL}
+      - REACT_APP_ENVIRONMENT=${REACT_APP_ENVIRONMENT}
     ports:
       - "3000:3000"
     volumes:
@@ -131,6 +141,24 @@ services:
       - finance-api
       - hr-api
       - frontend
+    networks:
+      - enterprise-network
+
+  # Optional test service: builds sales-api with dev dependencies and runs pytest
+  sales-api-test:
+    image: qoder2-sales-api
+    depends_on:
+      - postgres
+      - redis
+      - sales-api
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
+    # Install dev deps at runtime and run pytest against the sales-api service
+    command: ["sh", "-c", "python -m pip install --user -r requirements-dev.txt && SALES_API_URL='http://sales-api:8000' /home/appuser/.local/bin/pytest -q"]
     networks:
       - enterprise-network
 
