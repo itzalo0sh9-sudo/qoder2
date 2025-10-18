@@ -1,4 +1,5 @@
-# Enterprise Software System
+cd 'C:\Users\alhas\Desktop\qoder2'
+docker compose ps# Enterprise Software System
 
 A comprehensive enterprise software system with microservices architecture, built with FastAPI, Django, and React.
 
@@ -196,6 +197,36 @@ REACT_APP_SALES_API_URL=http://localhost:8001
 REACT_APP_FINANCE_API_URL=http://localhost:8002
 REACT_APP_HR_API_URL=http://localhost:8003
 ```
+
+## 🔐 Secrets & environment (safe handling)
+
+Keep secrets out of source control. Follow these steps to manage environment variables securely:
+
+- Use the provided `.env.example` as a template and create a local `.env` that is NOT committed.
+- `.env` is already ignored by `.gitignore`. If you accidentally committed secrets, rotate them and remove the values from history (a backup branch `backup-before-filter` exists).
+- For CI / deployment, provide secrets through your platform's secret store (GitHub Actions Secrets, environment variables in your host, or a secret manager).
+
+Example GitHub Actions usage (in your workflow):
+
+```yaml
+env:
+   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+   JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+   DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+```
+
+Quick local steps:
+
+```powershell
+# copy template
+cp .env.example .env
+# edit the .env and set strong secrets (do NOT commit)
+notepad .env
+```
+
+If you need to remove a secret accidentally committed, rotate the secret and recreate credentials, then remove the file from history (we already rewrote large files; contact repo admins if you need help recovering old data).
+
+"النسخة العربية: احتفظ بالمفاتيح والسرّيات خارج مستودع الكود. استخدم `.env.example` كقالب وأنشئ ملف `.env` محلياً ولا تقم بدفعه إلى GitHub."
 
 ### Database Schema
 The system uses a multi-schema PostgreSQL setup:
