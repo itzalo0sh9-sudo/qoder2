@@ -1,5 +1,5 @@
 # Development Dockerfile for React Frontend
-FROM node:20-alpine
+FROM node:18-bullseye-slim
 
 # Set working directory
 WORKDIR /app

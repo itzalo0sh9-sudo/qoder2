@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 import uvicorn
 from app.routes import customers, products, orders, auth, notifications, reports
 from app.database import engine, Base
 from sqlalchemy.exc import OperationalError
 import time
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 
 def create_tables_with_retry(retries: int = 10, delay: float = 2.0):
@@ -20,17 +22,11 @@ def create_tables_with_retry(retries: int = 10, delay: float = 2.0):
     # last attempt (let exception bubble)
     Base.metadata.create_all(bind=engine)
 
-
 app = FastAPI(
     title="Sales API",
     description="Enterprise Sales Management API",
     version="1.0.0"
 )
-
-# Ensure tables are created when the app starts
-@app.on_event("startup")
-def on_startup():
-    create_tables_with_retry()
 
 # Add CORS middleware
 app.add_middleware(
@@ -56,6 +52,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/metrics")
+async def metrics():
+    data = generate_latest()
+    return Response(content=data, media_type=CONTENT_TYPE_LATEST)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

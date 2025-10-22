@@ -1,7 +1,8 @@
-version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
+    env_file: .env.prod
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -16,9 +17,35 @@ services:
       context: ./backend/sales-api
       dockerfile: Dockerfile.prod
     image: qoder2-sales-api:latest
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    restart: unless-stopped
+    env_file: .env.prod
+    # variables are provided via env_file: .env.prod
+    networks:
+      - enterprise-network
+    depends_on:
+      - postgres
+
+  finance-api:
+    build:
+      context: ./backend/finance-api
+      dockerfile: Dockerfile
+    image: qoder2-finance-api:latest
+    restart: unless-stopped
+    env_file: .env.prod
+    # variables are provided via env_file: .env.prod
+    networks:
+      - enterprise-network
+    depends_on:
+      - postgres
+
+  hr-api:
+    build:
+      context: ./backend/hr-api
+      dockerfile: Dockerfile
+    image: qoder2-hr-api:latest
+    restart: unless-stopped
+    env_file: .env.prod
+    # variables are provided via env_file: .env.prod
     networks:
       - enterprise-network
     depends_on:
@@ -29,51 +56,65 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     image: qoder2-frontend:latest
-    environment:
-      - REACT_APP_SALES_API_URL=${REACT_APP_SALES_API_URL}
+    restart: unless-stopped
+    env_file: .env.prod
+    # variables are provided via env_file: .env.prod
     networks:
       - enterprise-network
-    ports:
-      - "80:80"
 
   nginx:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
-      - "80:80"
+      - target: 80
+        published: 0
+        protocol: tcp
+      - target: 443
+        published: 0
+        protocol: tcp
     volumes:
       - ./infrastructure/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/docker/nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - sales-api
+      - finance-api
+      - hr-api
+    networks:
+      - enterprise-network
+    env_file: .env.prod
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - target: 9090
+        published: 0
+        protocol: tcp
+    networks:
+      - enterprise-network
+    env_file: .env.prod
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    env_file: .env.prod
+    # variables are provided via env_file: .env.prod
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - target: 3000
+        published: 0
+        protocol: tcp
     networks:
       - enterprise-network
 
 volumes:
   postgres_data:
+  grafana_data:
 
 networks:
   enterprise-network:
     driver: bridge
-version: '3.8'
-services:
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  sales-api:
-    image: qoder2-sales-api:latest
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-    ports:
-      - "8001:8000"
-    depends_on:
-      - postgres
-
-volumes:
-  postgres_data:

@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
+from apps.monitoring import views as monitoring_views
 
 def health_check(request):
     return JsonResponse({'status': 'healthy'})
@@ -25,4 +26,5 @@ urlpatterns = [
     path('api/accounting/', include('apps.accounting.urls')),
     path('api/billing/', include('apps.billing.urls')),
     path('health/', health_check, name='health_check'),
+    path('metrics', monitoring_views.metrics, name='metrics'),
 ]
