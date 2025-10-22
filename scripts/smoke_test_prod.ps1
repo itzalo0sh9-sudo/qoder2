@@ -6,8 +6,25 @@ param(
 Write-Host "Starting production smoke test using $EnvFile"
 
 if (-not (Test-Path $EnvFile)) {
-    Write-Error "Missing $EnvFile. Create it from .env.prod.example and set production secrets."
-    exit 2
+    # If running in CI, try to construct .env.prod from environment variables
+    if ($Env:CI -or $Env:GITHUB_ACTIONS) {
+        Write-Host "$EnvFile missing — attempting to generate from environment variables for CI run"
+        $content = @()
+        if ($Env:DATABASE_URL) { $content += "DATABASE_URL=$($Env:DATABASE_URL)" }
+        if ($Env:FINANCE_DATABASE_URL) { $content += "FINANCE_DATABASE_URL=$($Env:FINANCE_DATABASE_URL)" }
+        if ($Env:HR_DATABASE_URL) { $content += "HR_DATABASE_URL=$($Env:HR_DATABASE_URL)" }
+        if ($Env:NGINX_CERT && $Env:NGINX_KEY) { $content += "NGINX_CERT=/etc/nginx/certs/fullchain.pem"; $content += "NGINX_KEY=/etc/nginx/certs/privkey.pem" }
+        if ($content.Count -gt 0) {
+            $content | Out-File -FilePath $EnvFile -Encoding utf8
+            Write-Host "Generated $EnvFile from environment variables"
+        } else {
+            Write-Error "Missing $EnvFile and no env vars to construct it. Create it from .env.prod.example and set production secrets."
+            exit 2
+        }
+    } else {
+        Write-Error "Missing $EnvFile. Create it from .env.prod.example and set production secrets."
+        exit 2
+    }
 }
 
 # Accept self-signed certificates for smoke-test requests (only for local testing)
@@ -70,7 +87,8 @@ function Wait-Health($url, $timeoutSeconds) {
     while ((Get-Date) -lt $end) {
         try {
             # Use TLS and follow redirects. Ignore cert errors globally above.
-            $r = Invoke-WebRequest -Uri $url -MaximumRedirection 5 -TimeoutSec 6 -ErrorAction Stop
+            $headers = @{ 'X-Internal-Health' = 'true' }
+            $r = Invoke-WebRequest -Uri $url -Headers $headers -MaximumRedirection 5 -TimeoutSec 6 -ErrorAction Stop
             if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 400) { return $true }
         } catch {
             Start-Sleep -Seconds 2
