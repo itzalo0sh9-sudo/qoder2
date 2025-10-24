@@ -1,0 +1,41 @@
+name: Build & Smoke (optional)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-images:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build compose images
+        run: |
+          docker compose -f docker-compose.prod.yml build --progress=plain
+
+  smoke-test:
+    name: Optional smoke test (runs only if RUN_SMOKE_TEST secret == 'true')
+    runs-on: ubuntu-latest
+    needs: build-images
+    if: ${{ secrets.RUN_SMOKE_TEST == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start services (compose)
+        run: |
+          # NOTE: This step expects an .env.prod file or the necessary secrets to be present
+          docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+      - name: Run smoke test (PowerShell)
+        shell: pwsh
+        run: |
+          ./scripts/smoke_test_prod.ps1
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose -f docker-compose.prod.yml down

@@ -1,6 +1,9 @@
 # Production Dockerfile for Sales API (FastAPI)
 FROM python:3.11-slim
 
+# Optional build-arg to install development requirements (pytest, requests)
+ARG INSTALL_DEV=0
+
 # Set working directory
 WORKDIR /app
 
@@ -11,9 +14,13 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements file
 COPY requirements.txt .
+COPY requirements-dev.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Install dev requirements when requested
+RUN if [ "$INSTALL_DEV" = "1" ]; then pip install --no-cache-dir -r requirements-dev.txt; fi
 
 # Copy source code
 COPY . .
