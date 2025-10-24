@@ -42,7 +42,15 @@ frontend/build/
 .env
 docker-compose.override.yml
 
+# TLS certs for nginx (do not commit)
+infrastructure/docker/nginx/certs/
+.env.prod
+
+# Local environment file for production smoke tests - should not be in repo
+.env.prod
 # Misc
+# Chrome dev profile artifacts (local)
+.chrome-dev-profile/
 *.log
 *.sql
 *.sqlite3

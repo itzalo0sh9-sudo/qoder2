@@ -5,3 +5,10 @@ scrape_configs:
   - job_name: 'sales-api'
     static_configs:
       - targets: ['sales-api:8000']
+  - job_name: 'finance-api'
+    static_configs:
+      - targets: ['finance-api:8000']
+
+  - job_name: 'hr-api'
+    static_configs:
+      - targets: ['hr-api:8000']
